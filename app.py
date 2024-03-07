@@ -328,8 +328,7 @@ def api_del_rec():
     rid = request.json["id"]
     # d = db.delete(Measures).where(Measures.meter_id == rid)
     # db.session.execute(d)
-    q = db.select(Meters).where(Meters.id == rid)
-    meter_rec = db.session.execute(q).scalar()
+    meter_rec = Meters.with_id(rid)
     db.session.delete(meter_rec)
     db.session.commit()
     resp = Response('', 200)
@@ -340,12 +339,10 @@ def api_del_rec():
 @login_required
 def api_swap():
     ids = request.json
-    # with db.session.begin():
-    r1 = db.session.execute(db.select(Meters).where(Meters.id == ids["from"])).scalar()
-    r2 = db.session.execute(db.select(Meters).where(Meters.id == ids["to"])).scalar()
+    r1 = Meters.with_id(ids["from"])
+    r2 = Meters.with_id(ids["to"])
     r1.order, r2.order = r2.order, r1.order
     db.session.commit()
-
     resp = Response('', 200)
     return resp
 
@@ -353,25 +350,17 @@ def api_swap():
 @app.route("/api/nameedit/", methods=["POST"])
 @cross_origin()
 def api_nameedit():
-    ids = request.json
-    q = db.select(Meters).where(Meters.id == ids["id"])
-    meter_rec = db.session.execute(q).scalar()
-    meter_rec.name = ids["name"]
+    """
+    изменение имени счетчика
+    """
+    meter_dict = request.json
+    meter_rec = Meters.with_id(meter_dict["id"])
+    meter_rec.name = meter_dict["name"]
     db.session.commit()
 
     resp = Response('', 200)
     return resp
 
-
-
-
-
-
-
-
-
-
-from model.tables import Users, Measures, Meters
 
 
 if __name__ == "__main__":

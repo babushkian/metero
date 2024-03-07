@@ -54,6 +54,11 @@ class Meters(db.Model):
 
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    @staticmethod
+    def with_id(id_):
+        print(id_, type(id_))
+        q = db.select(Meters).where(Meters.id == id_)
+        return db.session.execute(q).scalar()
 
 class Measures(db.Model):
     id = db.Column(db.Integer, primary_key=True)
