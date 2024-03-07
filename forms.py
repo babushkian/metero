@@ -22,7 +22,7 @@ class RegisterForm(FlaskForm):
 
 class MeasurementInpit(Form):
     ENTRY_TITLE = 'meter_entry_'
-    entry = FloatField("", validators=[DataRequired(),])
+    entry = FloatField("")
 
 class MeasurementsForm(FlaskForm):
     date_id = HiddenField('origin date id', default=0)

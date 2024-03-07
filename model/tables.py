@@ -7,9 +7,9 @@ from model import db
 
 class Users(db.Model,  UserMixin ):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=True)
+    name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), unique=True)
-    psw = db.Column(db.String(500), nullable=True)
+    psw = db.Column(db.String(500), nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
@@ -17,7 +17,7 @@ class Users(db.Model,  UserMixin ):
 
 class Dates(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date)
+    date = db.Column(db.Date, unique=True, nullable=False)
 
     def __repr__(self):
         return f"<Dates (id={self.id},  date={self.date})>"

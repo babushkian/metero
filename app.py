@@ -133,23 +133,32 @@ def edit_measurement_data():
     # Изменение записей происходит таким образом: идет выборка за старую дату, получается запись,
     # и ей присваиваются новая дата и/или новые данные
     # если старой даты нет, выборку откуда-то производить надо
+    meter_values = {}
     for i in request.form:
         # добавляем показания в базу (обрабатываем динамические поля с названиями счетчиков)
         if i.startswith(MeasurementInpit.ENTRY_TITLE):
             form_entry_id = int(i.removeprefix(MeasurementInpit.ENTRY_TITLE))
+            # если значение счетчика не введено, присваиваем ему None
+            meter_values[form_entry_id] = request.form[i] if request.form[i] else None
+    # если хотя бы одно значение счетчика заполнено, создаем запись
+    # если изменена дата, но все значения счетчиков стерты, такие изменения тоже не стоит принимать
+    if any(meter_values.values()):
+        for form_entry_id in meter_values:
+            value = meter_values[form_entry_id]
             meter_id = meters_dict[form_entry_id]
             # в цикле ищем запись для конкретного счетчика за конкретное число для текущего пользователя
+            # чтобы была возможность исправить это значение
             measurement = Measures.specific_record(origin_date_id, meter_id)
-            # переписываем даты для всех записей, независимо от того, менялась дата или нет (чтобы не городить лишние усооваия)
             if measurement:
-                if measurement.data != request.form[i] or measurement.date_id != date_id:
+                # переписываем даты для всех записей, независимо от того, менялась дата или нет (чтобы не городить лишние усооваия)
+                if measurement.data != value or measurement.date_id != date_id:
                     measurement.date_id = date_id
-                    measurement.data = request.form[i]
+                    measurement.data = value
             else:
-                m = Measures(meter_id=meter_id, user_id=current_user.id, date_id=date_id, data=request.form[i])
+                m = Measures(meter_id=meter_id, user_id=current_user.id, date_id=date_id, data=value)
                 db.session.add(m)
-    db.session.commit()
-    flash(f"Запись {action}", category='success')
+        db.session.commit()
+        flash(f"Запись {action}", category='success')
     return redirect(url_for('meters_table'))
 
 
