@@ -297,8 +297,7 @@ def dashboard():
 @cross_origin()
 @login_required
 def get_meters():
-    tblq = db.select(Meters).filter(Meters.user_id == current_user.id)
-    tbl = db.session.execute(tblq).scalars().all()
+    tbl = Meters.with_current_user()
     meter_list = []
     for i in tbl:
         meter_list.append(i.as_dict())
@@ -311,6 +310,7 @@ def get_meters():
 @login_required
 def api_add_rec():
     j = request.json
+    j["name"] = j["name"][:45]
     q = db.select(func.max(Meters.order)).where(Meters.user_id == j["user_id"])
     max_ord = db.session.execute(q).scalar()
 
@@ -338,24 +338,30 @@ def api_del_rec():
 @cross_origin()
 @login_required
 def api_swap():
+    # изначально делал обмен ментами в рамках транзакции, но с @login_required это не работает
+    # говорит, что транзакция уже началась
+    cu_meters = Meters.with_current_user()
     ids = request.json
     r1 = Meters.with_id(ids["from"])
     r2 = Meters.with_id(ids["to"])
-    r1.order, r2.order = r2.order, r1.order
-    db.session.commit()
+    # прежде чем менять местами счетчики, надо убедиться, что они принадлежат текущему юзеру (для безопасности)
+    if r1 in cu_meters and r2 in cu_meters:
+        r1.order, r2.order = r2.order, r1.order
+        db.session.commit()
     resp = Response('', 200)
     return resp
 
 
 @app.route("/api/nameedit/", methods=["POST"])
 @cross_origin()
+@login_required
 def api_nameedit():
     """
     изменение имени счетчика
     """
     meter_dict = request.json
     meter_rec = Meters.with_id(meter_dict["id"])
-    meter_rec.name = meter_dict["name"]
+    meter_rec.name = meter_dict["name"][:45]
     db.session.commit()
 
     resp = Response('', 200)

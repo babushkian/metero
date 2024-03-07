@@ -60,6 +60,11 @@ class Meters(db.Model):
         q = db.select(Meters).where(Meters.id == id_)
         return db.session.execute(q).scalar()
 
+    @staticmethod
+    def with_current_user():
+        q = db.select(Meters).filter(Meters.user_id == current_user.id)
+        return db.session.execute(q).scalars().all()
+
 class Measures(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
