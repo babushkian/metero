@@ -1,0 +1,19 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+        <div class="meter-list">
+            <h1>Список счетчиков</h1>
+            <div class="form-horizontal">
+                <div class="add_block" data-user-id="{{user.id}}"></div>
+                <div class="meter_block"></div>
+            </div>
+        </div>
+
+{% endblock content %}
+<!--не работает из нследованного шаблона не грузит скрипт-->
+{% block head_js %}
+{{ super() }}
+<script src="{{url_for('static', filename = 'js/dashboard.js')}}"></script>
+{% endblock %}
+

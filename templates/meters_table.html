@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+{% include "table.html" %}
+{% endblock content %}
+{% block head_js %}
+{{ super() }}
+
+<script src="{{url_for('static', filename = 'js/table.js')}}"></script>
+
+{% endblock %}

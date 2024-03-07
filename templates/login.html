@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="col-md-8 col-md-offset-2">
+
+    <form action="" class="form-horizontal" method="post">
+        <div class="meter_block">
+        {{form.hidden_tag()}}
+        {% for field in form if field.name not in ['csrf_token', 'submit', 'remember_me'] -%}
+        <div class="form-group">
+            {{field.label(class="control-label")}}
+            <div class="row login">
+                {{field(class="input_meter")}}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="check-box-label">
+                <div class="remember_checkbox">
+                {{ form.remember_me}}
+                </div>
+                {{ form.remember_me.label}}
+        </div>
+        </div>
+        {{form.submit(class="commit")}}
+    </form>
+</div>
+{% endblock %}

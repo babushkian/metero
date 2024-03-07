@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class = "form-horizontal">
+{% for i in content  %}
+<p>{{ i | safe }}</p>
+{% endfor %}
+</div>
+{% endblock %}

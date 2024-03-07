@@ -1,0 +1,41 @@
+<table class="table">
+    <thead>
+    <tr>
+        {% for head in table_dict["head"] %}
+        <th class="text-end" scope="col">
+            <div class="table_header">
+                {{ head }}
+            </div>
+        </th>
+        {% endfor %}
+        <th class="text-end" scope="col">действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% if table_dict["measurements"] %}
+        {% for row_ in table_dict["measurements"] %}
+        <tr>
+            {% for data in row_["data"] %}
+                <td>{{data}}</td>
+            {% endfor %}
+            <td>
+                <div class="table__action">
+                    <form action="{{ url_for('edit_measurement') }}" method="POST">
+                        <button type="submit" class="edit-rec" name="subbutton" value="{{row_['id']}}">
+                            <img src="{{url_for('static', filename = 'icons/pencil-fill.svg')}}" />
+                        </button>
+                    </form>
+                    <form action="{{ url_for('del_measurement_post') }}" method="POST">
+                        <button type="submit" class="del-rec" name="subbutton" value="{{row_['id']}}">
+                            <img src="{{url_for('static', filename = 'icons/trash-fill.svg')}}" />
+                        </button>
+
+                    </form>
+                </div>
+            </td>
+
+        </tr>
+        {% endfor %}
+    {% endif %}
+</table>
+

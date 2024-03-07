@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="IE=edge" http-equiv="X-UA-Compatible" />
+        <meta content="width=device-width, initial-scale=1" name="viewport" />
+        <title>{{title}}</title>
+
+        <link
+            href="{{ url_for('static', filename='css/style.css')}}"
+            rel="stylesheet"
+            type="text/css"
+        />
+
+        <!--<link href="./style.css" rel="stylesheet" type="text/css" />-->
+    </head>
+    <body>
+        <div class="main">
+            <nav>
+                <div class="navbar">
+                    <div class="navbar__logo">
+                        <a class="" href="{{ url_for('index') }}"
+                            >Показания счетчиков</a
+                        >
+                    </div>
+
+                    <ul class="navbar__options">
+                        {% if current_user.is_authenticated %}
+                        <li class="navbar__options-item">
+                            <a href="{{ url_for('dashboard') }}">Кабинет</a>
+                        </li>
+                        <li class="navbar__options-item">
+                            <a href="{{ url_for('meters_table') }}">Таблица</a>
+                        </li>
+
+                        <li class="navbar__options-item">
+                            <form action="{{ url_for('edit_measurement') }}" method="POST">
+                            <button type="submit" class="edit-rec" name="subbutton" value="0">Внести</button>
+                    </form>
+                        </li>
+                        {% else %}
+                        <li class="navbar__options-item">
+                            <a href="{{ url_for('register') }}">Регистрация</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% if current_user.is_anonymous %}
+                <form action="{{ url_for('login') }}" method="get">
+                    <button class="navbar__button">Войти</button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('logout') }}" method="get">
+                    <button class="navbar__button">
+                        ({{current_user.name}}) Выйти
+                    </button>
+                </form>
+                {% endif %}
+            </nav>
+
+            <div class="content">
+                    <h1>{{ comment }}</h1>
+                {% for cat, msg in get_flashed_messages(True) %}
+                <div class="alert alert-{{cat}}" role="alert">{{msg}}</div>
+                {% endfor %}
+                {% block content %}
+                {% endblock content %}
+            </div>
+        </div>
+
+        {% block head_js %} {% endblock %}
+    </body>
+</html>

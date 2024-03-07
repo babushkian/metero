@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<form action="{{url_for('edit_measurement_data')}}" class="form-horizontal" method="post">
+    <div class="meter_block">
+   {{form.hidden_tag()}}
+   {{form.date_id}}
+   <div class="form-group">
+        {{form.date.label(class="control-label") }}
+        <div class="row login">
+            {{form.date(class="input_meter") }}
+        </div>
+   </div>
+    {% for e in form.entries%}
+    <div class="form-group">
+        {{ e.entry.label(class="control-label") }}
+        <div class="row login">
+            {{ e.entry(class="input_meter") }}
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+    {{form.submit(class="commit")}}
+</form>
+{% endblock %}

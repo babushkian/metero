@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+    <form action="" class="form-horizontal" method="post">
+        <div class="meter_block">
+        {{form.hidden_tag()}}
+        {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
+            <div class="form-group">
+                {{field.label(class="control-label")}}
+                <div class="row login">
+                    {{field(class="input_meter")}}
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+        {{ form.submit(class="commit") }}
+    </form>
+</div>
+{% endblock %}
