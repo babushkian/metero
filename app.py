@@ -15,7 +15,7 @@ from sqlalchemy import func, exists, distinct, and_
 
 
 from model import db, login_manager
-from model.tables import Meters, Users, Measures, Dates
+from model.tables import Meters, Users, Measures, Dates, UsrLog
 
 from forms import LoginForm, RegisterForm, MeasurementsForm, MeasurementInpit
 from cred import Cred
@@ -44,6 +44,9 @@ def index():
     # print(current_app)
     # print('type:', type(current_app))
     # print('property:', dir(current_app))
+    ip_addr = request.remote_addr
+    print("ip:", ip_addr)
+
     header = "На этом сайте можно легко и просто вести учет показаний домашних счетчкиков. Воды, тепла, электричества... да чего угодно! Даже веса своей тещи."
     content = ["Это учебный проект, который представляет собой приложение для учета показаний счетчиков.",
                "Здесь можно зарегистрироваться, завести неколько счетчиков, отсортировать их в удобном порядке и вносить показания.",
@@ -270,6 +273,7 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
+        UsrLog.login_attempt(form.email.data, request.remote_addr)
         uq = db.select(Users).filter(Users.email == form.email.data)
         user = db.session.execute(uq).scalar_one_or_none()
 
@@ -277,17 +281,19 @@ def login():
             if check_password_hash(user.psw, form.password.data):
                 rem = form.remember_me.data
                 login_user(user, remember=rem)
+                UsrLog.login(request.remote_addr)
                 return redirect(request.args.get('next') or url_for('dashboard'))
             else:
                 flash('Неверный пароль', category='danger')
         else:
             flash('Пользователь не существует', category='danger')
-    # form = LoginForm()
     return render_template("login.html", title="Вход", comment="Авторизация", form=form)
+
 
 @app.route("/logout", methods=("POST", "GET"))
 @login_required
 def logout():
+    UsrLog.logout(request.remote_addr)
     logout_user()
     return redirect(url_for('index'))
 
@@ -328,7 +334,8 @@ def api_add_rec():
     m = Meters(**j)
     db.session.add(m)
     db.session.commit()
-    return "text"
+    UsrLog.add_meter(request.remote_addr, j["name"])
+    return Response('', 200)
 
 @app.route("/api/del_rec/", methods=["POST"])
 @cross_origin()
@@ -339,6 +346,7 @@ def api_del_rec():
     # db.session.execute(d)
     meter_rec = Meters.with_id(rid)
     db.session.delete(meter_rec)
+    UsrLog.delete_meter(request.remote_addr, rid)
     db.session.commit()
     resp = Response('', 200)
     return resp
@@ -371,6 +379,7 @@ def api_nameedit():
     meter_dict = request.json
     meter_rec = Meters.with_id(meter_dict["id"])
     meter_rec.name = meter_dict["name"][:45]
+    UsrLog.rename_meter(request.remote_addr, meter_rec.id, meter_rec.name)
     db.session.commit()
 
     resp = Response('', 200)

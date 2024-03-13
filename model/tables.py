@@ -99,4 +99,54 @@ def load_user(user_id):
     return Users.query.get(user_id)
 
 
+class UsrLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    action = db.Column(db.Integer, db.ForeignKey('actions.id'))
+    info = db.Column(db.String(255))
+    date = db.Column(db.DateTime, default=datetime.now)
+    ip = db.Column(db.String(16))
+    def __repr__(self):
+        return f"<Log (id={self.id},  user_id={self.user_id}, date={self.date}, action={self.action})>"
 
+    @staticmethod
+    def login_attempt(username, ip):
+        db.session.add(UsrLog(action=11, info=username,  ip=ip))
+        db.session.commit()
+
+    @staticmethod
+    def login(ip):
+        db.session.add(UsrLog(user_id=current_user.id, action=2, ip=ip))
+        db.session.commit()
+
+    @staticmethod
+    def logout(ip):
+        rec = UsrLog(user_id=current_user.id, action=3, ip=ip)
+        print(rec)
+        db.session.add(rec)
+        db.session.commit()
+
+    @staticmethod
+    def add_meter(ip, name):
+        q = db.select(Meters.id).where(Meters.user_id == current_user.id).where(Meters.name == name)
+        meter_id = db.session.execute(q).scalar()
+        info = f"{meter_id}, {name}"
+        db.session.add(UsrLog(user_id=current_user.id, action=4, info=info, ip=ip))
+        db.session.commit()
+
+    @staticmethod
+    def rename_meter(ip, meter_id, name):
+        info = f"{meter_id}, {name}"
+        db.session.add(UsrLog(user_id=current_user.id, action=5, info=info, ip=ip))
+
+    @staticmethod
+    def delete_meter(ip, meter_id):
+        db.session.add(UsrLog(user_id=current_user.id, action=6, info=str(meter_id), ip=ip))
+
+
+
+
+
+class Actions(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))

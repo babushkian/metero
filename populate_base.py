@@ -4,7 +4,7 @@ import os
 from flask import Flask
 
 from model import db
-from model.tables import Meters, Users, Measures, Dates
+from model.tables import Meters, Users, Measures, Dates, Actions
 from data_for_base import *
 from cred import Cred
 
@@ -51,6 +51,6 @@ def populate_table(table):
 with app.app_context():
     db.drop_all()
     db.create_all()
-    for t in [Dates, Users, Meters, Measures, ]:
+    for t in [Dates, Users, Meters, Measures, Actions]:
         populate_table(t)
 
