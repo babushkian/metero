@@ -9,7 +9,7 @@ from data_for_base import *
 from cred import Cred
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{Cred.my_user}:{Cred.my_pass}@localhost/meteror'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{Cred.my_user}:{Cred.my_pass}@{Cred.host}/{Cred.base}'
 app.config['SQLALCHEMY_ECHO'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')

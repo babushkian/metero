@@ -143,7 +143,17 @@ class UsrLog(db.Model):
     def delete_meter(ip, meter_id):
         db.session.add(UsrLog(user_id=current_user.id, action=6, info=str(meter_id), ip=ip))
 
+    @staticmethod
+    def edit_measures(ip, ed_date, is_old):
+        db.session.add(UsrLog(user_id=current_user.id, action=(7 + is_old), info=str(ed_date), ip=ip))
+        db.session.commit()
 
+    @staticmethod
+    def delete_measures(ip, date_id,):
+        q = db.select(Dates.date).where(Dates.id == date_id)
+        ed_date = db.session.execute(q).scalar_one_or_none()
+        db.session.add(UsrLog(user_id=current_user.id, action=9, info=str(ed_date), ip=ip))
+        db.session.commit()
 
 
 

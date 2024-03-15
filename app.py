@@ -22,7 +22,7 @@ from cred import Cred
 
 app = Flask(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{Cred.my_user}:{Cred.my_pass}@localhost/meteror'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{Cred.my_user}:{Cred.my_pass}@{Cred.host}/{Cred.base}'
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
@@ -161,6 +161,8 @@ def edit_measurement_data():
                 m = Measures(meter_id=meter_id, user_id=current_user.id, date_id=date_id, data=value)
                 db.session.add(m)
         db.session.commit()
+        # в зависимости от того, чему равна action делается отметка о создании или изменении
+        UsrLog.edit_measures(request.remote_addr, request.form["date"], action == "изменена")
         flash(f"Запись {action}", category='success')
     return redirect(url_for('meters_table'))
 
@@ -186,7 +188,7 @@ def del_measurement_post():
          )
     measurements = db.session.execute(q)
     db.session.commit()
-
+    UsrLog.delete_measures(request.remote_addr, date_id)
     return redirect(url_for('meters_table'))
 
 
