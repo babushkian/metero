@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<form action="{{url_for('edit_measurement_data')}}" class="form-horizontal" method="post">
+<form action="{{url_for('all.edit_measurement_data')}}" class="form-horizontal" method="post">
     <div class="meter_block">
    {{form.hidden_tag()}}
    {{form.date_id}}

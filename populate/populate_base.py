@@ -1,25 +1,36 @@
 import os
+import sys
+from pprint import pprint
 
 
-from flask import Flask
 
-from model import db
-from model.tables import Meters, Users, Measures, Dates, Actions
+
+
 from data_for_base import *
-from cred import Cred
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{Cred.my_user}:{Cred.my_pass}@{Cred.host}/{Cred.base}'
-app.config['SQLALCHEMY_ECHO'] = True
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+from dotenv import load_dotenv
 
 
-db.init_app(app)
+# Определяем путь до корня проекта (один уровень выше текущего файла)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+from app import create_app, db
+from model.tables import Meters, Users, Measures, Dates, Actions
+load_dotenv()
+
+# Получаем URL из переменной окружения
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+
 
 print("метадата:")
 print(dir(db.metadata))
-print(db.metadata.tables)
+print("*****************************************")
+for table in db.metadata.tables:
+    pprint(table)
+    pprint(db.metadata.tables[table])
+print("*****************************************")
 print(db.metadata.info)
 print(db.metadata.schema)
 
@@ -48,6 +59,7 @@ def populate_table(table):
         db.session.commit()
 
 
+app = create_app()
 with app.app_context():
     db.drop_all()
     db.create_all()

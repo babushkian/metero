@@ -19,7 +19,7 @@
             <nav>
                 <div class="navbar">
                     <div class="navbar__logo">
-                        <a class="" href="{{ url_for('index') }}"
+                        <a class="" href="{{ url_for('all.index') }}"
                             >Показания счетчиков</a
                         >
                     </div>
@@ -27,30 +27,30 @@
                     <ul class="navbar__options">
                         {% if current_user.is_authenticated %}
                         <li class="navbar__options-item">
-                            <a href="{{ url_for('dashboard') }}">Кабинет</a>
+                            <a href="{{ url_for('all.dashboard') }}">Кабинет</a>
                         </li>
                         <li class="navbar__options-item">
-                            <a href="{{ url_for('meters_table') }}">Таблица</a>
+                            <a href="{{ url_for('all.meters_table') }}">Таблица</a>
                         </li>
 
                         <li class="navbar__options-item">
-                            <form action="{{ url_for('edit_measurement') }}" method="POST">
+                            <form action="{{ url_for('all.edit_measurement') }}" method="POST">
                             <button type="submit" class="edit-rec" name="subbutton" value="0">Внести</button>
                     </form>
                         </li>
                         {% else %}
                         <li class="navbar__options-item">
-                            <a href="{{ url_for('register') }}">Регистрация</a>
+                            <a href="{{ url_for('all.register') }}">Регистрация</a>
                         </li>
                         {% endif %}
                     </ul>
                 </div>
                 {% if current_user.is_anonymous %}
-                <form action="{{ url_for('login') }}" method="get">
+                <form action="{{ url_for('all.login') }}" method="get">
                     <button class="navbar__button">Войти</button>
                 </form>
                 {% else %}
-                <form action="{{ url_for('logout') }}" method="get">
+                <form action="{{ url_for('all.logout') }}" method="get">
                     <button class="navbar__button">
                         ({{current_user.name}}) Выйти
                     </button>

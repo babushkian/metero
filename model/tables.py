@@ -1,14 +1,14 @@
 from datetime import datetime
 from flask_login import UserMixin, current_user
 
-from model import login_manager
-from model import db
+from model.extensions import login_manager, db
+
 
 
 class Users(db.Model,  UserMixin ):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(50), unique=True)
+    name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), unique=True)
     psw = db.Column(db.String(500), nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
 

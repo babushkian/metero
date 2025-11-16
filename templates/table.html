@@ -20,12 +20,12 @@
             {% endfor %}
             <td>
                 <div class="table__action">
-                    <form action="{{ url_for('edit_measurement') }}" method="POST">
+                    <form action="{{ url_for('all.edit_measurement') }}" method="POST">
                         <button type="submit" class="edit-rec" name="subbutton" value="{{row_['id']}}">
                             <img src="{{url_for('static', filename = 'icons/pencil-fill.svg')}}" />
                         </button>
                     </form>
-                    <form action="{{ url_for('del_measurement_post') }}" method="POST">
+                    <form action="{{ url_for('all.del_measurement_post') }}" method="POST">
                         <button type="submit" class="del-rec" name="subbutton" value="{{row_['id']}}">
                             <img src="{{url_for('static', filename = 'icons/trash-fill.svg')}}" />
                         </button>
