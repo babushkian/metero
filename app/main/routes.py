@@ -9,8 +9,8 @@ from wtforms import Label
 from sqlalchemy import func, exists, distinct, and_
 
 
-from .model import db, login_manager
-from .model.tables import Meters, Users, Measures, Dates, UsrLog, Actions
+from app.model import db, login_manager
+from app.model.tables import Meters, Users, Measures, Dates, UsrLog, Actions
 
 from .forms import LoginForm, RegisterForm, MeasurementsForm, MeasurementInpit
 
