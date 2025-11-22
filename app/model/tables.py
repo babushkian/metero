@@ -1,8 +1,8 @@
 import datetime
 from flask_login import UserMixin, current_user
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Integer, String
-from model.extensions import login_manager, db
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey, Column, Integer, String, Date
+from app.model import login_manager, db
 
 
 class Users(db.Model, UserMixin):
@@ -17,8 +17,8 @@ class Users(db.Model, UserMixin):
 
 
 class Dates(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, unique=True, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    date = mapped_column(Date, unique=True, nullable=False)
 
     def __repr__(self):
         return f"<Dates (id={self.id},  date={self.date})>"
@@ -184,8 +184,3 @@ class UsrLog(db.Model):
 class Actions(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
-
-
-class Test(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50))

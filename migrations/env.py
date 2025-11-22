@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from alembic import context
 from app import create_app
 from dotenv import load_dotenv
-from model import Base
+from app.model import Base
 
 load_dotenv(".env")
 
@@ -18,7 +18,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # access to the values within the .ini file in use.
 config = context.config
 app = create_app()
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+if DATABASE_URL is not None:
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 target_metadata = Base.metadata
 
@@ -67,9 +68,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

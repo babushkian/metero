@@ -1,8 +1,6 @@
-import os
 import datetime
-from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template, request, redirect, url_for, flash 
+from flask import render_template, request, redirect, url_for, flash
 from flask import jsonify, Response, Blueprint
 
 from flask_cors import cross_origin
@@ -11,12 +9,13 @@ from wtforms import Label
 from sqlalchemy import func, exists, distinct, and_
 
 
-from model import db, login_manager
-from model.tables import Meters, Users, Measures, Dates, UsrLog, Actions
+from .model import db, login_manager
+from .model.tables import Meters, Users, Measures, Dates, UsrLog, Actions
 
-from forms import LoginForm, RegisterForm, MeasurementsForm, MeasurementInpit
+from .forms import LoginForm, RegisterForm, MeasurementsForm, MeasurementInpit
 
 bp = Blueprint("all", __name__)
+
 
 @bp.route("/")
 def index():
@@ -28,20 +27,26 @@ def index():
     print("ip:", ip_addr)
 
     header = "На этом сайте можно легко и просто вести учет показаний домашних счетчкиков. Воды, тепла, электричества... да чего угодно! Даже веса своей тещи."
-    content = ["Это учебный проект, который представляет собой приложение для учета показаний счетчиков.",
-               "Здесь можно зарегистрироваться, завести неколько счетчиков, отсортировать их в удобном порядке и вносить показания.",
-               " Если что-то введено неправильно, записи можно исправлять.",
-               "Для ознакомления с функционалом сайта я сделал несколько учетных записей:",
-               "dimba@mail.ru", "kos@mail.ru", "f@f.ru", "vas@mail.ru", "Пароли у всех аккаунтов: «1234».", "Меня зовут Дима, будем знакомы))). Мне можно написать в телегу <b>@sakalof</b>."]
-    return render_template("index.html",
-                           title="Главная",
-                           comment=header, content=content)
+    content = [
+        "Это учебный проект, который представляет собой приложение для учета показаний счетчиков.",
+        "Здесь можно зарегистрироваться, завести неколько счетчиков, отсортировать их в удобном порядке и вносить показания.",
+        " Если что-то введено неправильно, записи можно исправлять.",
+        "Для ознакомления с функционалом сайта я сделал несколько учетных записей:",
+        "dimba@mail.ru",
+        "kos@mail.ru",
+        "f@f.ru",
+        "vas@mail.ru",
+        "Пароли у всех аккаунтов: «1234».",
+        "Меня зовут Дима, будем знакомы))). Мне можно написать в телегу <b>@sakalof</b>.",
+    ]
+    return render_template(
+        "index.html", title="Главная", comment=header, content=content
+    )
 
 
-@bp.route("/edit_measurement/",  methods=("POST",))
+@bp.route("/edit_measurement/", methods=("POST",))
 @login_required
 def edit_measurement():
-
     form = MeasurementsForm()
     # берем дату для заполнения первого поля: дата
     did = int(request.form["subbutton"])
@@ -49,8 +54,8 @@ def edit_measurement():
         q = db.select(Dates).where(Dates.id == did)
         date_edit = db.session.execute(q).scalar_one_or_none()
         if date_edit is None:
-            flash("Отсутствует указанная дата", category='danger')
-            return redirect(url_for('all.meters_table'))
+            flash("Отсутствует указанная дата", category="danger")
+            return redirect(url_for("all.meters_table"))
         form.date.data = date_edit.date
         form.date_id.data = date_edit.id
         date_id = date_edit.id
@@ -58,8 +63,15 @@ def edit_measurement():
         date_id = did
 
     # пронумерованный список имен счетчиков
-    q = db.select(func.row_number().over(order_by='order').label('number'), Meters.name, Meters.id).where(
-        Meters.user_id == current_user.id).order_by(Meters.order)
+    q = (
+        db.select(
+            func.row_number().over(order_by="order").label("number"),
+            Meters.name,
+            Meters.id,
+        )
+        .where(Meters.user_id == current_user.id)
+        .order_by(Meters.order)
+    )
     meter_ids = db.session.execute(q).all()
 
     ent = list()
@@ -72,7 +84,7 @@ def edit_measurement():
     for rec in meter_ids:
         e = MeasurementInpit()
         ee = e.entry
-        entry_id = f'{e.ENTRY_TITLE}{rec.number}'
+        entry_id = f"{e.ENTRY_TITLE}{rec.number}"
         ee.id = entry_id
         ee.name = entry_id
         ee.data = exist_measurements.get(rec.id)
@@ -81,15 +93,19 @@ def edit_measurement():
     form.entries = ent
     form.submit.label.text = "Изменить" if did else "Внести"
     comment_string = f"{'Изменение' if did else 'Внесение'} показаний"
-    return render_template("measurement.html", title=comment_string, comment=comment_string,
-                           form=form)
+    return render_template(
+        "measurement.html", title=comment_string, comment=comment_string, form=form
+    )
 
 
 @bp.route("/edit_measurement_data", methods=("POST",))
 @login_required
 def edit_measurement_data():
-    q = db.select(func.row_number().over(order_by='order').label('number'), Meters).where(
-        Meters.user_id == current_user.id).order_by(Meters.order)
+    q = (
+        db.select(func.row_number().over(order_by="order").label("number"), Meters)
+        .where(Meters.user_id == current_user.id)
+        .order_by(Meters.order)
+    )
     meter_ids = db.session.execute(q).all()
     # словарь, где в ключах содержатся номера счетчиков (для удобства), а в значениях id-шники счетчиков в таблице
     meters_dict = {rec.number: rec.Meters.id for rec in meter_ids}
@@ -102,12 +118,11 @@ def edit_measurement_data():
     action = "изменена" if origin_date_id else "добавлена"
     # признак новой записи - дата в форму не передавалась
 
-
     # проверяем, нет ли уже показаний за эту дату, внесенных данным пользователем, если да, то ошибка
     # если в ходе редактирования дата не изменялась, можно не проверять
     if origin_date_id != date_id and Measures.with_date_id(date_id):
-        flash("Ошибка! Запись с такой датой уже существует.", category='danger')
-        return redirect(url_for('all.meters_table'))
+        flash("Ошибка! Запись с такой датой уже существует.", category="danger")
+        return redirect(url_for("all.meters_table"))
     # запись новая, дата не менялась, аоэтому нужно откудато получать старые версии данных
     # получаем из записей за ту же дату
     if origin_date_id == 0:
@@ -138,65 +153,82 @@ def edit_measurement_data():
                     measurement.date_id = date_id
                     measurement.data = value
             else:
-                m = Measures(meter_id=meter_id, user_id=current_user.id, date_id=date_id, data=value)
+                m = Measures(
+                    meter_id=meter_id,
+                    user_id=current_user.id,
+                    date_id=date_id,
+                    data=value,
+                )
                 db.session.add(m)
         db.session.commit()
         # в зависимости от того, чему равна action делается отметка о создании или изменении
-        UsrLog.edit_measures(request.remote_addr, request.form["date"], action == "изменена")
-        flash(f"Запись {action}", category='success')
-    return redirect(url_for('all.meters_table'))
+        UsrLog.edit_measures(
+            request.remote_addr, request.form["date"], action == "изменена"
+        )
+        flash(f"Запись {action}", category="success")
+    return redirect(url_for("all.meters_table"))
 
 
-@bp.route("/example/",  methods=("POST",))
+@bp.route("/example/", methods=("POST",))
 @login_required
 def example():
     print("свойства формы:")
     for i in request.form:
         print(request.form[i])
-    return render_template("example.html", form = request.form)
+    return render_template("example.html", form=request.form)
 
 
-@bp.route("/del_measurement_post/",  methods=("POST",))
+@bp.route("/del_measurement_post/", methods=("POST",))
 @login_required
 def del_measurement_post():
-
     date_id = int(request.form["subbutton"])
 
-    q = (db.delete(Measures)
-         .where(Measures.user_id == current_user.id)
-         .where(Measures.date_id == date_id)
-         )
+    q = (
+        db.delete(Measures)
+        .where(Measures.user_id == current_user.id)
+        .where(Measures.date_id == date_id)
+    )
     measurements = db.session.execute(q)
     db.session.commit()
     UsrLog.delete_measures(request.remote_addr, date_id)
-    return redirect(url_for('all.meters_table'))
-
-
+    return redirect(url_for("all.meters_table"))
 
 
 @bp.route("/meters_table", methods=("POST", "GET"))
 def meters_table():
     table_dict = return_table_data(current_user.id)
-    return render_template('meters_table.html',
-                           title='Показания счетчиков',
-                           comment='Показания счетчиков',
-                           table_dict=table_dict)
+    return render_template(
+        "meters_table.html",
+        title="Показания счетчиков",
+        comment="Показания счетчиков",
+        table_dict=table_dict,
+    )
 
 
 def return_table_data(user_id):
-    a = (db.select(Measures, Dates.date.label('date_name'), Meters.name.label('meter_name'), Meters.order.label('order'))
-         .filter(Measures.user_id == user_id)
-         .join(Dates, Dates.id == Measures.date_id)
-         .join(Meters, Meters.id == Measures.meter_id)
-         ).subquery()
+    a = (
+        db.select(
+            Measures,
+            Dates.date.label("date_name"),
+            Meters.name.label("meter_name"),
+            Meters.order.label("order"),
+        )
+        .filter(Measures.user_id == user_id)
+        .join(Dates, Dates.id == Measures.date_id)
+        .join(Meters, Meters.id == Measures.meter_id)
+    ).subquery()
     # сипсок неповторяющихся дат
-    t_time = db.select(distinct(a.c.date_id), a.c.date_name).order_by(a.c.date_name.desc())
+    t_time = db.select(distinct(a.c.date_id), a.c.date_name).order_by(
+        a.c.date_name.desc()
+    )
     table_date = db.session.execute(t_time).all()
     date_dict = {t[0]: t[1] for t in table_date}
 
     # список счетчиков
     # t_meters = db.select(distinct(a.c.meter_id), a.c.meter_name).order_by(a.c.order)
-    t_meters = db.select(distinct(a.c.meter_id),a.c.meter_name, a.c.order).order_by(a.c.order)
+    t_meters = db.select(distinct(a.c.meter_id), a.c.meter_name, a.c.order).order_by(
+        a.c.order
+    )
     table_head = db.session.execute(t_meters).all()
 
     # показания счетчиков: id счетчика, id даты, показания
@@ -214,7 +246,7 @@ def return_table_data(user_id):
 
     table_list = []
     for date_id in date_dict:
-        line = [date_dict[date_id].strftime('%d.%m.%Y')]
+        line = [date_dict[date_id].strftime("%d.%m.%Y")]
 
         for m in table_head:
             dd = data_dict[date_id].get(m[0])
@@ -222,33 +254,41 @@ def return_table_data(user_id):
         table_list.append({"id": date_id, "data": line})
 
     head = [i[1] for i in table_head]
-    head = ['дата'] + head
+    head = ["дата"] + head
 
-    jsonlike = {'head': head, "measurements": table_list}
+    jsonlike = {"head": head, "measurements": table_list}
     return jsonlike
-
 
 
 @bp.route("/register", methods=("POST", "GET"))
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        is_duplicated = db.session.execute(db.select(Users).filter(Users.email == form.email.data)).one_or_none()
+        is_duplicated = db.session.execute(
+            db.select(Users).filter(Users.email == form.email.data)
+        ).one_or_none()
         if is_duplicated:
-            flash('Пользователь с таким почтовым адресом уже существует', category='danger')
-            return redirect(url_for('all.register'))
+            flash(
+                "Пользователь с таким почтовым адресом уже существует",
+                category="danger",
+            )
+            return redirect(url_for("all.register"))
         try:
             hash = generate_password_hash(form.password1.data)
             u = Users(name=form.name.data, email=form.email.data, psw=hash)
             db.session.add(u)
             db.session.commit()
-            flash('Вы успешно зарегистрированы', category='success')
-            return redirect(url_for('all.login'))
+            flash("Вы успешно зарегистрированы", category="success")
+            return redirect(url_for("all.login"))
         except:
-            flash('Что-то пошло не так.', category='danger')
+            flash("Что-то пошло не так.", category="danger")
 
-    return render_template("register.html", title="Регистрация",
-                           comment="Зарегистрируйтесь, пожалуйста", form=form)
+    return render_template(
+        "register.html",
+        title="Регистрация",
+        comment="Зарегистрируйтесь, пожалуйста",
+        form=form,
+    )
 
 
 @bp.route("/login", methods=("POST", "GET"))
@@ -264,11 +304,11 @@ def login():
                 rem = form.remember_me.data
                 login_user(user, remember=rem)
                 UsrLog.login(request.remote_addr)
-                return redirect(request.args.get('next') or url_for('all.dashboard'))
+                return redirect(request.args.get("next") or url_for("all.dashboard"))
             else:
-                flash('Неверный пароль', category='danger')
+                flash("Неверный пароль", category="danger")
         else:
-            flash('Пользователь не существует', category='danger')
+            flash("Пользователь не существует", category="danger")
     return render_template("login.html", title="Вход", comment="Авторизация", form=form)
 
 
@@ -277,17 +317,17 @@ def login():
 def logout():
     UsrLog.logout(request.remote_addr)
     logout_user()
-    return redirect(url_for('all.index'))
+    return redirect(url_for("all.index"))
+
 
 @bp.route("/dashboard", methods=("POST", "GET"))
 @login_required
 def dashboard():
     u = db.get_or_404(Users, current_user.id)
-    msg = f'Добро пожаловать, {u.name} ({u.email})'
-    return render_template("dashboard.html",
-                           title="Личный кабинет",
-                           comment=msg,
-                           user=u)
+    msg = f"Добро пожаловать, {u.name} ({u.email})"
+    return render_template(
+        "dashboard.html", title="Личный кабинет", comment=msg, user=u
+    )
 
 
 @bp.route("/api/get_meters/", methods=["GET"])
@@ -317,7 +357,8 @@ def api_add_rec():
     db.session.add(m)
     db.session.commit()
     UsrLog.add_meter(request.remote_addr, j["name"])
-    return Response('', 200)
+    return Response("", 200)
+
 
 @bp.route("/api/del_rec/", methods=["POST"])
 @cross_origin()
@@ -330,8 +371,9 @@ def api_del_rec():
     db.session.delete(meter_rec)
     UsrLog.delete_meter(request.remote_addr, rid)
     db.session.commit()
-    resp = Response('', 200)
+    resp = Response("", 200)
     return resp
+
 
 @bp.route("/api/swap/", methods=["POST"])
 @cross_origin()
@@ -347,7 +389,7 @@ def api_swap():
     if r1 in cu_meters and r2 in cu_meters:
         r1.order, r2.order = r2.order, r1.order
         db.session.commit()
-    resp = Response('', 200)
+    resp = Response("", 200)
     return resp
 
 
@@ -364,5 +406,5 @@ def api_nameedit():
     UsrLog.rename_meter(request.remote_addr, meter_rec.id, meter_rec.name)
     db.session.commit()
 
-    resp = Response('', 200)
+    resp = Response("", 200)
     return resp
