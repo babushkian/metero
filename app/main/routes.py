@@ -7,7 +7,8 @@ from flask_cors import cross_origin
 from flask_login import login_required, login_user, current_user, logout_user
 from wtforms import Label
 from sqlalchemy import func, exists, distinct, and_
-
+from app.repositories.date_repository import DateRepository
+from app.repositories.meter_repository import MetersRepository
 
 from app.model import db, login_manager
 from app.model.tables import Meters, Users, Measures, Dates, UsrLog, Actions
@@ -101,6 +102,7 @@ def edit_measurement():
 @bp.route("/edit_measurement_data", methods=("POST",))
 @login_required
 def edit_measurement_data():
+    dr = DateRepository()
     q = (
         db.select(func.row_number().over(order_by="order").label("number"), Meters)
         .where(Meters.user_id == current_user.id)
@@ -112,7 +114,7 @@ def edit_measurement_data():
 
     conv_date = datetime.datetime.strptime(request.form["date"], "%Y-%m-%d").date()
     # если дата существует, возвращается ее id, иначе дата создается и возвращается id
-    date_id = Dates.get_edited_date_id(conv_date)
+    date_id = dr.get_edited_date_id(conv_date)
 
     origin_date_id = int(request.form["date_id"])
     action = "изменена" if origin_date_id else "добавлена"
@@ -334,7 +336,8 @@ def dashboard():
 @cross_origin()
 @login_required
 def get_meters():
-    tbl = Meters.with_current_user()
+    mr = MetersRepository()
+    tbl = mr.with_current_user()
     meter_list = []
     for i in tbl:
         meter_list.append(i.as_dict())
@@ -365,9 +368,8 @@ def api_add_rec():
 @login_required
 def api_del_rec():
     rid = request.json["id"]
-    # d = db.delete(Measures).where(Measures.meter_id == rid)
-    # db.session.execute(d)
-    meter_rec = Meters.with_id(rid)
+    mr = MetersRepository()
+    meter_rec = mr.with_id(rid)
     db.session.delete(meter_rec)
     UsrLog.delete_meter(request.remote_addr, rid)
     db.session.commit()
@@ -381,10 +383,11 @@ def api_del_rec():
 def api_swap():
     # изначально делал обмен ментами в рамках транзакции, но с @login_required это не работает
     # говорит, что транзакция уже началась
-    cu_meters = Meters.with_current_user()
+    mr = MetersRepository()
+    cu_meters = mr.with_current_user()
     ids = request.json
-    r1 = Meters.with_id(ids["from"])
-    r2 = Meters.with_id(ids["to"])
+    r1 = mr.with_id(ids["from"])
+    r2 = mr.with_id(ids["to"])
     # прежде чем менять местами счетчики, надо убедиться, что они принадлежат текущему юзеру (для безопасности)
     if r1 in cu_meters and r2 in cu_meters:
         r1.order, r2.order = r2.order, r1.order

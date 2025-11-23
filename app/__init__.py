@@ -1,18 +1,8 @@
 import os
-import datetime
 from dotenv import load_dotenv
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask
 
-
-from flask_cors import cross_origin
-from flask_login import login_required, login_user, logout_user
-from wtforms import Label
-from sqlalchemy import exists, distinct, and_
-
-
 from app.model import db, login_manager
-
 
 load_dotenv(override=True)
 
