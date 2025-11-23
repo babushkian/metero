@@ -9,6 +9,7 @@ from wtforms import Label
 from sqlalchemy import func, exists, distinct, and_
 from app.repositories.date_repository import DateRepository
 from app.repositories.meter_repository import MetersRepository
+from app.repositories.measure_repository import MeasureRepository
 
 from app.model import db, login_manager
 from app.model.tables import Meters, Users, Measures, Dates, UsrLog, Actions
@@ -76,7 +77,8 @@ def edit_measurement():
     meter_ids = db.session.execute(q).all()
 
     ent = list()
-    measurements = Measures.with_date_id(date_id)
+    measure_repo = MeasureRepository()
+    measurements = measure_repo.with_date_id(date_id)
 
     # делаем словарь, где id счетчика сопоставлены данные измерения
     exist_measurements = {}
@@ -122,7 +124,8 @@ def edit_measurement_data():
 
     # проверяем, нет ли уже показаний за эту дату, внесенных данным пользователем, если да, то ошибка
     # если в ходе редактирования дата не изменялась, можно не проверять
-    if origin_date_id != date_id and Measures.with_date_id(date_id):
+    measure_repo = MeasureRepository()
+    if origin_date_id != date_id and measure_repo.with_date_id(date_id):
         flash("Ошибка! Запись с такой датой уже существует.", category="danger")
         return redirect(url_for("all.meters_table"))
     # запись новая, дата не менялась, аоэтому нужно откудато получать старые версии данных
@@ -148,7 +151,8 @@ def edit_measurement_data():
             meter_id = meters_dict[form_entry_id]
             # в цикле ищем запись для конкретного счетчика за конкретное число для текущего пользователя
             # чтобы была возможность исправить это значение
-            measurement = Measures.specific_record(origin_date_id, meter_id)
+            measure_repo = MeasureRepository()
+            measurement = measure_repo.specific_record(origin_date_id, meter_id)
             if measurement:
                 # переписываем даты для всех записей, независимо от того, менялась дата или нет (чтобы не городить лишние усооваия)
                 if measurement.data != value or measurement.date_id != date_id:
@@ -404,7 +408,8 @@ def api_nameedit():
     изменение имени счетчика
     """
     meter_dict = request.json
-    meter_rec = Meters.with_id(meter_dict["id"])
+    mr = MetersRepository()
+    meter_rec = mr.with_id(meter_dict["id"])
     meter_rec.name = meter_dict["name"][:45]
     UsrLog.rename_meter(request.remote_addr, meter_rec.id, meter_rec.name)
     db.session.commit()

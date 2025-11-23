@@ -1,3 +1,4 @@
+# from __future__ import annotations
 import datetime
 from typing import Any
 from flask_login import UserMixin, current_user
@@ -8,12 +9,14 @@ from app.model import login_manager, db
 
 class Users(db.Model, UserMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True)
-    psw: Mapped[str] = mapped_column(String(500), nullable=False)
+    psw: Mapped[str] = mapped_column(String(500))
     date: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.now
     )
+    meters: Mapped[list["Meters"]] = relationship("Meters", back_populates="user")
+    measures: Mapped[list["Measures"]] = relationship("Measures", back_populates="user")
 
     def __repr__(self):
         return f"<Users (id={self.id},  name={self.name}, email={self.email})>"
@@ -21,7 +24,8 @@ class Users(db.Model, UserMixin):
 
 class Dates(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    date: Mapped[datetime.date] = mapped_column(Date, unique=True, nullable=False)
+    date: Mapped[datetime.date] = mapped_column(Date, unique=True)
+    measures: Mapped[list["Measures"]] = relationship("Measures", back_populates="date")
 
     def __repr__(self) -> str:
         return f"<Dates (id={self.id},  date={self.date})>"
@@ -29,9 +33,13 @@ class Dates(db.Model):
 
 class Meters(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(50))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     order: Mapped[int]
+    user: Mapped[Users] = relationship("Users", back_populates="meters")
+    measures: Mapped[list["Measures"]] = relationship(
+        "Measures", back_populates="meter"
+    )
 
     def __repr__(self) -> str:
         return f"<Mertes (id={self.id},  name={self.name}, user_id={self.user_id})>"
@@ -41,35 +49,21 @@ class Meters(db.Model):
 
 
 class Measures(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"))
-    meter_id = db.Column(db.Integer, db.ForeignKey("meters.id", ondelete="CASCADE"))
-    date_id = db.Column(db.Integer, db.ForeignKey("dates.id", ondelete="CASCADE"))
-    data = db.Column(db.Float)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE")
+    )
+    meter_id: Mapped[int] = mapped_column(ForeignKey("meters.id", ondelete="CASCADE"))
+    date_id: Mapped[int] = mapped_column(
+        db.Integer, db.ForeignKey("dates.id", ondelete="CASCADE")
+    )
+    data: Mapped[float]
+    user: Mapped[Users] = relationship("Users", back_populates="measures")
+    meter: Mapped[Meters] = relationship("Meters", back_populates="measures")
+    date: Mapped[Dates] = relationship("Dates", back_populates="measures")
 
     def __repr__(self):
         return f"<Measure (id={self.id},  user={self.user_id}, date={self.date_id}, data={self.data})>"
-
-    @staticmethod
-    def with_date_id(date_id: int):
-        q = (
-            db.select(Measures)
-            .where(Measures.user_id == current_user.id)
-            .where(Measures.date_id == date_id)
-        )
-        msmnts = db.session.execute(q).scalars().all()
-        return msmnts
-
-    @staticmethod
-    def specific_record(date, meter):
-        q = (
-            db.select(Measures)
-            .where(Measures.user_id == current_user.id)
-            .where(Measures.date_id == date)
-            .where(Measures.meter_id == meter)
-        )
-        measurement = db.session.execute(q).scalar_one_or_none()
-        return measurement
 
 
 @login_manager.user_loader
