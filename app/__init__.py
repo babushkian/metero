@@ -25,7 +25,12 @@ def create_app():
     login_manager.login_message = "Для внесения показаний нужно авторизоваться."
     login_manager.login_message_category = "danger"
 
-    from app.main.routes import bp
+    from app.main.routes import bp as main_bp
+    from app.api.routes import bp as api_bp
+    from app.auth.routes import bp as auth_bp
 
-    app.register_blueprint(bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(api_bp)
+    app.register_blueprint(auth_bp)
+
     return app

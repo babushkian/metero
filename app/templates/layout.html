@@ -40,17 +40,17 @@
                         </li>
                         {% else %}
                         <li class="navbar__options-item">
-                            <a href="{{ url_for('all.register') }}">Регистрация</a>
+                            <a href="{{ url_for('auth.register') }}">Регистрация</a>
                         </li>
                         {% endif %}
                     </ul>
                 </div>
                 {% if current_user.is_anonymous %}
-                <form action="{{ url_for('all.login') }}" method="get">
+                <form action="{{ url_for('auth.login') }}" method="get">
                     <button class="navbar__button">Войти</button>
                 </form>
                 {% else %}
-                <form action="{{ url_for('all.logout') }}" method="get">
+                <form action="{{ url_for('auth.logout') }}" method="get">
                     <button class="navbar__button">
                         ({{current_user.name}}) Выйти
                     </button>

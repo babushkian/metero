@@ -3,7 +3,7 @@ import datetime
 from typing import Any
 from flask_login import UserMixin, current_user
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, Column, Integer, String, Date, DateTime, select
+from sqlalchemy import ForeignKey, Integer, String, Date, DateTime, select
 from app.model import login_manager, db
 
 

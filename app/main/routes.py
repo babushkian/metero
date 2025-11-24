@@ -1,20 +1,16 @@
 import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask import render_template, request, redirect, url_for, flash
-from flask import jsonify, Response, Blueprint
+from flask import Blueprint
 
-from flask_cors import cross_origin
 from flask_login import login_required, login_user, current_user, logout_user
 from wtforms import Label
 from sqlalchemy import func, exists, distinct, and_
 from app.repositories.date_repository import DateRepository
-from app.repositories.meter_repository import MetersRepository
 from app.repositories.measure_repository import MeasureRepository
 
 from app.model import db, login_manager
-from app.model.tables import Meters, Users, Measures, Dates, UsrLog, Actions
-
-from .forms import LoginForm, RegisterForm, MeasurementsForm, MeasurementInpit
+from app.model.tables import Meters, Users, Measures, Dates, UsrLog
+from .forms import MeasurementsForm, MeasurementInpit
 
 bp = Blueprint("all", __name__)
 
@@ -266,66 +262,6 @@ def return_table_data(user_id):
     return jsonlike
 
 
-@bp.route("/register", methods=("POST", "GET"))
-def register():
-    form = RegisterForm()
-    if form.validate_on_submit():
-        is_duplicated = db.session.execute(
-            db.select(Users).filter(Users.email == form.email.data)
-        ).one_or_none()
-        if is_duplicated:
-            flash(
-                "Пользователь с таким почтовым адресом уже существует",
-                category="danger",
-            )
-            return redirect(url_for("all.register"))
-        try:
-            hash = generate_password_hash(form.password1.data)
-            u = Users(name=form.name.data, email=form.email.data, psw=hash)
-            db.session.add(u)
-            db.session.commit()
-            flash("Вы успешно зарегистрированы", category="success")
-            return redirect(url_for("all.login"))
-        except:
-            flash("Что-то пошло не так.", category="danger")
-
-    return render_template(
-        "register.html",
-        title="Регистрация",
-        comment="Зарегистрируйтесь, пожалуйста",
-        form=form,
-    )
-
-
-@bp.route("/login", methods=("POST", "GET"))
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        UsrLog.login_attempt(form.email.data, request.remote_addr)
-        uq = db.select(Users).filter(Users.email == form.email.data)
-        user = db.session.execute(uq).scalar_one_or_none()
-
-        if user:
-            if check_password_hash(user.psw, form.password.data):
-                rem = form.remember_me.data
-                login_user(user, remember=rem)
-                UsrLog.login(request.remote_addr)
-                return redirect(request.args.get("next") or url_for("all.dashboard"))
-            else:
-                flash("Неверный пароль", category="danger")
-        else:
-            flash("Пользователь не существует", category="danger")
-    return render_template("login.html", title="Вход", comment="Авторизация", form=form)
-
-
-@bp.route("/logout", methods=("POST", "GET"))
-@login_required
-def logout():
-    UsrLog.logout(request.remote_addr)
-    logout_user()
-    return redirect(url_for("all.index"))
-
-
 @bp.route("/dashboard", methods=("POST", "GET"))
 @login_required
 def dashboard():
@@ -334,85 +270,3 @@ def dashboard():
     return render_template(
         "dashboard.html", title="Личный кабинет", comment=msg, user=u
     )
-
-
-@bp.route("/api/get_meters/", methods=["GET"])
-@cross_origin()
-@login_required
-def get_meters():
-    mr = MetersRepository()
-    tbl = mr.with_current_user()
-    meter_list = []
-    for i in tbl:
-        meter_list.append(i.as_dict())
-    response = jsonify(meter_list)
-    return response
-
-
-@bp.route("/api/add_rec/", methods=["POST"])
-@cross_origin()
-@login_required
-def api_add_rec():
-    j = request.json
-    j["name"] = j["name"][:45]
-    q = db.select(func.max(Meters.order)).where(Meters.user_id == j["user_id"])
-    max_ord = db.session.execute(q).scalar()
-
-    max_ord = max_ord if max_ord else 0
-    j["order"] = max_ord + 1
-    m = Meters(**j)
-    db.session.add(m)
-    db.session.commit()
-    UsrLog.add_meter(request.remote_addr, j["name"])
-    return Response("", 200)
-
-
-@bp.route("/api/del_rec/", methods=["POST"])
-@cross_origin()
-@login_required
-def api_del_rec():
-    rid = request.json["id"]
-    mr = MetersRepository()
-    meter_rec = mr.with_id(rid)
-    db.session.delete(meter_rec)
-    UsrLog.delete_meter(request.remote_addr, rid)
-    db.session.commit()
-    resp = Response("", 200)
-    return resp
-
-
-@bp.route("/api/swap/", methods=["POST"])
-@cross_origin()
-@login_required
-def api_swap():
-    # изначально делал обмен ментами в рамках транзакции, но с @login_required это не работает
-    # говорит, что транзакция уже началась
-    mr = MetersRepository()
-    cu_meters = mr.with_current_user()
-    ids = request.json
-    r1 = mr.with_id(ids["from"])
-    r2 = mr.with_id(ids["to"])
-    # прежде чем менять местами счетчики, надо убедиться, что они принадлежат текущему юзеру (для безопасности)
-    if r1 in cu_meters and r2 in cu_meters:
-        r1.order, r2.order = r2.order, r1.order
-        db.session.commit()
-    resp = Response("", 200)
-    return resp
-
-
-@bp.route("/api/nameedit/", methods=["POST"])
-@cross_origin()
-@login_required
-def api_nameedit():
-    """
-    изменение имени счетчика
-    """
-    meter_dict = request.json
-    mr = MetersRepository()
-    meter_rec = mr.with_id(meter_dict["id"])
-    meter_rec.name = meter_dict["name"][:45]
-    UsrLog.rename_meter(request.remote_addr, meter_rec.id, meter_rec.name)
-    db.session.commit()
-
-    resp = Response("", 200)
-    return resp
