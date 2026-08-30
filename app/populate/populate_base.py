@@ -21,6 +21,38 @@ def populate_table(connection, table_name):
     # вставка одной операцией (быстро)
     connection.execute(table.insert(), data)
 
+    if "id" in table.c:
+        sync_sequence(connection, table)
+
+
+
+def sync_sequence(connection, table):
+    table_name = table.name
+
+    sequence = connection.execute(
+        sa.text("""
+            SELECT pg_get_serial_sequence(:table_name, 'id')
+        """),
+        {"table_name": table_name},
+    ).scalar_one()
+
+    if sequence is None:
+        return
+
+    max_id = connection.execute(
+        sa.select(sa.func.max(table.c.id))
+    ).scalar()
+
+    if max_id is None:
+        return
+
+    connection.execute(
+        sa.text("SELECT setval(:sequence, :value)"),
+        {
+            "sequence": sequence,
+            "value": max_id,
+        },
+    )
 
 def run(connection):
     """

@@ -1,19 +1,19 @@
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
-from app import create_app
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
+from app import create_app
 from app.model import Base
 
 load_dotenv(".env")
 
 # Получаем URL из переменной окружения
 DATABASE_URL = os.getenv("DATABASE_URL")
-
+print(DATABASE_URL)
+print("********************************")
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

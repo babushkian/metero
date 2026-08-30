@@ -1,4 +1,4 @@
-# from __future__ import annotations
+from __future__ import annotations
 import datetime
 from typing import Any
 from flask_login import UserMixin, current_user
@@ -15,8 +15,8 @@ class Users(db.Model, UserMixin):
     date: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.now
     )
-    meters: Mapped[list["Meters"]] = relationship("Meters", back_populates="user")
-    measures: Mapped[list["Measures"]] = relationship("Measures", back_populates="user")
+    meters: Mapped[list[Meters]] = relationship("Meters", back_populates="user")
+    measures: Mapped[list[Measures]] = relationship("Measures", back_populates="user")
 
     def __repr__(self):
         return f"<Users (id={self.id},  name={self.name}, email={self.email})>"
@@ -25,7 +25,7 @@ class Users(db.Model, UserMixin):
 class Dates(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[datetime.date] = mapped_column(Date, unique=True)
-    measures: Mapped[list["Measures"]] = relationship("Measures", back_populates="date")
+    measures: Mapped[list[Measures]] = relationship("Measures", back_populates="date")
 
     def __repr__(self) -> str:
         return f"<Dates (id={self.id},  date={self.date})>"
@@ -37,7 +37,7 @@ class Meters(db.Model):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     order: Mapped[int]
     user: Mapped[Users] = relationship("Users", back_populates="meters")
-    measures: Mapped[list["Measures"]] = relationship(
+    measures: Mapped[list[Measures]] = relationship(
         "Measures", back_populates="meter"
     )
 
