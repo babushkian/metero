@@ -4,10 +4,11 @@ from typing import Any
 from flask_login import UserMixin, current_user
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, Integer, String, Date, DateTime, select
-from app.model import login_manager, db
+from app.model import  db, Base
 
 
-class Users(db.Model, UserMixin):
+class Users(Base, UserMixin):
+    __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True)
@@ -22,7 +23,8 @@ class Users(db.Model, UserMixin):
         return f"<Users (id={self.id},  name={self.name}, email={self.email})>"
 
 
-class Dates(db.Model):
+class Dates(Base):
+    __tablename__ = "dates"
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[datetime.date] = mapped_column(Date, unique=True)
     measures: Mapped[list[Measures]] = relationship("Measures", back_populates="date")
@@ -31,7 +33,8 @@ class Dates(db.Model):
         return f"<Dates (id={self.id},  date={self.date})>"
 
 
-class Meters(db.Model):
+class Meters(Base):
+    __tablename__ = "meters"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
@@ -48,14 +51,13 @@ class Meters(db.Model):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
-class Measures(db.Model):
+class Measures(Base):
+    __tablename__ = "measures"
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE")
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE")
     )
     meter_id: Mapped[int] = mapped_column(ForeignKey("meters.id", ondelete="CASCADE"))
-    date_id: Mapped[int] = mapped_column(
-        db.Integer, db.ForeignKey("dates.id", ondelete="CASCADE")
+    date_id: Mapped[int] = mapped_column(ForeignKey("dates.id", ondelete="CASCADE")
     )
     data: Mapped[float]
     user: Mapped[Users] = relationship("Users", back_populates="measures")
@@ -66,20 +68,15 @@ class Measures(db.Model):
         return f"<Measure (id={self.id},  user={self.user_id}, date={self.date_id}, data={self.data})>"
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return Users.query.get(user_id)
 
-
-class UsrLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
-    action = db.Column(db.Integer, db.ForeignKey("actions.id"))
-    info = db.Column(db.String(255))
-    date = db.Column(
-        db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now
-    )
-    ip = db.Column(db.String(16))
+class UsrLog(Base):
+    __tablename__ = "usr_log"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int]
+    action: Mapped[int] = mapped_column(ForeignKey("actions.id", ondelete="CASCADE"))
+    info: Mapped[str] = mapped_column(String(255))
+    date: Mapped[DateTime] = mapped_column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    ip: Mapped[str] = mapped_column(String(16))
 
     def __repr__(self):
         return f"<Log (id={self.id},  user_id={self.user_id}, date={self.date}, action={self.action})>"
@@ -146,6 +143,7 @@ class UsrLog(db.Model):
         db.session.commit()
 
 
-class Actions(db.Model):
+class Actions(Base):
+    __tablename__ = "actions"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50))

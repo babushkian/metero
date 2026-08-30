@@ -1,4 +1,4 @@
-from app.model.extensions import db
+from app.model.database import db
 
 
 class BaseRepositiry:

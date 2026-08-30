@@ -2,11 +2,8 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask
-
-from app.model import db, login_manager
-
 load_dotenv(override=True)
-
+from app.model import db, login_manager
 # Получаем URL из переменной окружения
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -25,6 +22,9 @@ def create_app():
     login_manager.login_view = "login"
     login_manager.login_message = "Для внесения показаний нужно авторизоваться."
     login_manager.login_message_category = "danger"
+
+    
+
 
     from app.blueprints.api.routes import bp as api_bp
     from app.blueprints.auth.routes import bp as auth_bp
