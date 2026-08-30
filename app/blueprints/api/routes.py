@@ -16,7 +16,7 @@ from sqlalchemy import and_, distinct, exists, func
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.model import db
-from app.model.tables import Meters, UsrLog
+from app.model.tables import Meters
 from app.repositories.date_repository import DateRepository
 from app.repositories.measure_repository import MeasureRepository
 from app.repositories.meter_repository import MetersRepository
@@ -52,7 +52,6 @@ def api_add_rec():
     m = Meters(**j)
     db.session.add(m)
     db.session.commit()
-    UsrLog.add_meter(request.remote_addr, j["name"])
     return Response("", 200)
 
 
@@ -64,7 +63,6 @@ def api_del_rec():
     mr = MetersRepository()
     meter_rec = mr.with_id(rid)
     db.session.delete(meter_rec)
-    UsrLog.delete_meter(request.remote_addr, rid)
     db.session.commit()
     resp = Response("", 200)
     return resp
@@ -100,7 +98,6 @@ def api_nameedit():
     mr = MetersRepository()
     meter_rec = mr.with_id(meter_dict["id"])
     meter_rec.name = meter_dict["name"][:45]
-    UsrLog.rename_meter(request.remote_addr, meter_rec.id, meter_rec.name)
     db.session.commit()
 
     resp = Response("", 200)

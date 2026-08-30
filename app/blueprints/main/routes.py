@@ -9,7 +9,7 @@ from app.repositories.date_repository import DateRepository
 from app.repositories.measure_repository import MeasureRepository
 
 from app.model import db, login_manager
-from app.model.tables import Meters, Users, Measures, Dates, UsrLog
+from app.model.tables import Meters, Users, Measures, Dates
 from .forms import MeasurementsForm, MeasurementInpit
 
 bp = Blueprint("all", __name__)
@@ -164,9 +164,7 @@ def edit_measurement_data():
                 db.session.add(m)
         db.session.commit()
         # в зависимости от того, чему равна action делается отметка о создании или изменении
-        UsrLog.edit_measures(
-            request.remote_addr, request.form["date"], action == "изменена"
-        )
+
         flash(f"Запись {action}", category="success")
     return redirect(url_for("all.meters_table"))
 
@@ -192,7 +190,6 @@ def del_measurement_post():
     )
     measurements = db.session.execute(q)
     db.session.commit()
-    UsrLog.delete_measures(request.remote_addr, date_id)
     return redirect(url_for("all.meters_table"))
 
 
