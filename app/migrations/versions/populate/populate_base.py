@@ -1,5 +1,6 @@
-from . import data_for_base
 import sqlalchemy as sa
+
+from . import data_for_base
 
 
 def reflect_table(connection, table_name):

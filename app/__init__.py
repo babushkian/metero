@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 from flask import Flask
 
@@ -25,9 +26,9 @@ def create_app():
     login_manager.login_message = "Для внесения показаний нужно авторизоваться."
     login_manager.login_message_category = "danger"
 
-    from app.main.routes import bp as main_bp
-    from app.api.routes import bp as api_bp
-    from app.auth.routes import bp as auth_bp
+    from app.blueprints.api.routes import bp as api_bp
+    from app.blueprints.auth.routes import bp as auth_bp
+    from app.blueprints.main.routes import bp as main_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(api_bp)
