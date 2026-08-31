@@ -1,40 +1,47 @@
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import render_template, request, redirect, url_for, flash
-from flask import Blueprint
-
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
-
-from app.model import db
-from app.model.tables import Users
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.blueprints.main.forms import LoginForm, RegisterForm
+from app.model import SessionLocal
+from app.repositories import UserRepository
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
-@bp.route("/register", methods=("POST", "GET"))
-def register():
+@bp.get("/register")
+def register_user():
+    form = RegisterForm()
+    return render_template(
+        "register.html",
+        title="Регистрация",
+        comment="Зарегистрируйтесь, пожалуйста",
+        form=form,
+    )
+
+
+@bp.post("/register")
+def create_new_user():
     form = RegisterForm()
     if form.validate_on_submit():
-        is_duplicated = db.session.execute(
-            db.select(Users).filter(Users.email == form.email.data)
-        ).one_or_none()
-        if is_duplicated:
-            flash(
-                "Пользователь с таким почтовым адресом уже существует",
-                category="danger",
-            )
-            return redirect(url_for("auth.register"))
-        try:
-            hash = generate_password_hash(form.password1.data)
-            u = Users(name=form.name.data, email=form.email.data, psw=hash)
-            db.session.add(u)
-            db.session.commit()
-            flash("Вы успешно зарегистрированы", category="success")
-            return redirect(url_for("auth.login"))
-        except:
-            flash("Что-то пошло не так.", category="danger")
+        with SessionLocal() as session:
+            ur = UserRepository(session)
+            user = ur.get_by_email(form.email.data)
 
+            if user:
+                flash(
+                    "Пользователь с таким почтовым адресом уже существует",
+                    category="danger",
+                )
+                return redirect(url_for("auth.register_user"))
+            try:
+                psw_hash = generate_password_hash(form.password1.data)
+                new_user = ur.add({"email": form.email.data, "name": form.name.data, "psw": psw_hash})
+                session.commit()
+                flash("Вы успешно зарегистрированы", category="success")
+                return redirect(url_for("auth.login"))
+            except Exception:
+                flash("Что-то пошло не так.", category="danger")
     return render_template(
         "register.html",
         title="Регистрация",
@@ -46,10 +53,10 @@ def register():
 @bp.route("/login", methods=("POST", "GET"))
 def login():
     form = LoginForm()
-    if form.validate_on_submit():
-        uq = db.select(Users).filter(Users.email == form.email.data)
-        user = db.session.execute(uq).scalar_one_or_none()
-
+    if request.method == "POST" and form.validate_on_submit():
+        with SessionLocal() as session:
+            ur = UserRepository(session)
+            user = ur.get_by_email(form.email.data)
         if user:
             if check_password_hash(user.psw, form.password.data):
                 rem = form.remember_me.data

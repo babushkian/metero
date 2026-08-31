@@ -1,24 +1,15 @@
-import datetime
 
 from flask import (
     Blueprint,
     Response,
-    flash,
     jsonify,
-    redirect,
-    render_template,
     request,
-    url_for,
 )
 from flask_cors import cross_origin
 from flask_login import login_required
-from sqlalchemy import and_, distinct, exists, func
-from werkzeug.security import check_password_hash, generate_password_hash
-from app.model import   SessionLocal
-from app.model import db
+
+from app.model import SessionLocal
 from app.model.tables import Meters
-from app.repositories.date_repository import DateRepository
-from app.repositories.measure_repository import MeasureRepository
 from app.repositories.meter_repository import MetersRepository
 
 bp = Blueprint("api", __name__, url_prefix="/api")
