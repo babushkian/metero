@@ -12,3 +12,4 @@ flask run
 ```bash
 uv run manage.py
 ```
+Проверка токена
