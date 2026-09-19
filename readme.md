@@ -10,5 +10,4 @@ waitress --call app:create_app
 flask run
 ```
 ```bash
-uv run manage.py
-```
+uv run manaроверка токена на вшивость
